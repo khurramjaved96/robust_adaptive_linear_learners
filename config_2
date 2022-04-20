@@ -1,0 +1,30 @@
+{
+	"experiment": {
+		"name": "input_normalization",
+		"params": {
+			"seeds": ["30"],
+			"x_mean" : ["0"],
+			"x_std" : ["1"],
+			"step_size": "0.001",
+			"algorithm":["lms", "nadaline"]
+			"algorithm": [{
+				"lms": {
+					"step_size": "0.001",
+					"zeta": ["1", "2", "3"]
+				}
+			}, {
+				"nadaline": {
+					"opti": [{
+							"fita": ["10", "12"]
+						},
+						{
+							"zida": ["11", "13"]
+						}
+					],
+					"beta": ["2", "3"],
+					"feta": ["1", "2"]
+				}
+			}]
+		}
+	}
+}
