@@ -1,0 +1,46 @@
+{
+  "experiment": {
+    "name": "role_of_normalization_experiments_exp_8_2",
+    "params": {
+      "seeds": [
+        "1"
+      ],
+      "steps": [
+        "20000000"
+      ],
+      "features": [
+        "8",
+        "16",
+        "32",
+        "64"
+      ],
+      "algorithm": [
+        {
+          "idbdbest": {
+            "meta_step_size": [
+              "0.0000394020599828868"
+            ]
+          }
+        }
+      ],
+      "input_mean": [
+        "0.0"
+      ],
+      "input_std": [
+        "1.0"
+      ],
+      "target_mean": [
+        "0.0"
+      ],
+      "target_std": [
+        "1.0"
+      ],
+      "step_size": [
+        "0.05"
+      ],
+      "target_noise": [
+        "0.1"
+      ]
+    }
+  }
+}
