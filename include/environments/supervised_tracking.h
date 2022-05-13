@@ -9,7 +9,8 @@
 
 class SupervisedTracking {
   std::mt19937 mt;
-  std::normal_distribution<float> input_sampler;
+  std::bernoulli_distribution input_sampler;
+  std::uniform_real_distribution<float> target_noise_sampler;
   std::uniform_int_distribution<int> weight_change_index_sampler;
   float input_mean;
   float input_std;
@@ -21,12 +22,14 @@ class SupervisedTracking {
   std::vector<float> target_weights;
   void change_target();
  public:
+  std::vector<float> get_target_weights();
   SupervisedTracking(float input_mean,
                      float input_std,
                      float target_weights_mean,
                      float target_weights_std,
                      int dimensions,
-                     int seed);
+                     int seed,
+                     float target_noise);
   std::vector<float> step();
   float get_y();
   std::vector<float> generate_random_x();
@@ -43,6 +46,7 @@ class SupervisedLearning {
   int dimension;
   std::vector<float> target_weights;
  public:
+  void change_target_weights();
   std::vector<float> get_target_weights();
   SupervisedLearning(int dimensions, int seed, float target_noise);
   virtual std::vector<float> step() = 0;

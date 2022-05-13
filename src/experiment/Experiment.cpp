@@ -102,8 +102,7 @@ std::vector<int> ExperimentJSON::get_combinations(nlohmann::json j) {
       int temp_comb = get_prod(this->get_combinations(*it));
       total_combinations *= temp_comb;
       combination_list.push_back(temp_comb);
-    }
-    else if (it->is_primitive()){
+    } else if (it->is_primitive()) {
       combination_list.push_back(1);
     }
     it++;
@@ -133,37 +132,34 @@ std::map<std::string, std::string> ExperimentJSON::get_args_for_run(nlohmann::js
 //    std::cout << "Is array " << it->is_array() << std::endl;
 //    std::cout << "Is prim " << it->is_primitive() << std::endl;
 //    std::cout << "Is obj " << it->is_object() << std::endl;
-    if(it->is_primitive()){
+    if (it->is_primitive()) {
 //      std::cout << "Is prim\n";
       my_map.insert(std::pair<std::string, std::string>(it.key(), *it));
-    }
-    else if (it->is_array() && (*it)[0].is_primitive()) {
+    } else if (it->is_array() && (*it)[0].is_primitive()) {
 //      std::cout << "Is array of prim\n";
 //      std::cout << "Primitive iterator " << std::endl;
 //      std::cout << "Temp index = " << temp_index << std::endl;
       my_map.insert(std::pair<std::string, std::string>(it.key(), (*it)[temp_index]));
 //      std::cout << "Key " << it.key() << std::endl;
 //      std::cout << "Value" << it[temp_index] << std::endl;
-    }
-    else if (!it->is_array() && it->is_object()) {
+    } else if (!it->is_array() && it->is_object()) {
 //      std::cout << "Is obj\n";
 //      std::cout << "Calling recursive on " << *it << std::endl;
       auto temp_map = this->get_args_for_run(*it, temp_index);
       my_map.insert(temp_map.begin(), temp_map.end());
-    }
-    else if (it->is_array() && (*it)[0].is_object()) {
+    } else if (it->is_array() && (*it)[0].is_object()) {
 //      std::cout << "Is array of obj\n";
 //      std::cout << "Calling recursive on 2" << *it << std::endl;
       auto freq = this->get_combinations(*it);
       int inner_index = 0;
       int sum = freq[0];
       int old_sum = 0;
-      while(temp_index >= sum){
+      while (temp_index >= sum) {
         inner_index++;
         old_sum = sum;
         sum += freq[inner_index];
       }
-      temp_index  = temp_index - old_sum;
+      temp_index = temp_index - old_sum;
       auto temp_j_j = (*it)[inner_index];
       for (auto it2 = temp_j_j.begin(); it2 != temp_j_j.end(); ++it2) {
 //        std::cout << it.key() << " " << it2.key() << std::endl;
@@ -183,33 +179,30 @@ std::vector<std::pair<std::string, std::string>> ExperimentJSON::get_all_keys(nl
   std::vector<std::pair<std::string, std::string>> key_values;
 //  std::vector<std::string> values;
   for (auto it = j.begin(); it != j.end(); ++it) {
-    std::cout << *it << std::endl;
+//    std::cout << *it << std::endl;
 //    if(it->is_primitive() || it->is_array()) {
 //      keys.push_back(it.key());
-      if(it->is_primitive()) {
-        key_values.emplace_back(it.key(), *it);
+    if (it->is_primitive()) {
+      key_values.emplace_back(it.key(), *it);
 //        values.push_back(*it);
-      }
-      else if(it->is_array() && (*it)[0].is_object()) {
+    } else if (it->is_array() && (*it)[0].is_object()) {
 //        auto temp_j = (*it)[0];
 //        auto j_2 = temp_j.begin();
-        key_values.emplace_back(it.key(), (*it)[0].begin().key());
+      key_values.emplace_back(it.key(), (*it)[0].begin().key());
 //        values.push_back((*it)[0]);
-      }
-      else if(it->is_array() && !(*it)[0].is_object()){
-        key_values.emplace_back(it.key(), (*it)[0]);
-      }
+    } else if (it->is_array() && !(*it)[0].is_object()) {
+      key_values.emplace_back(it.key(), (*it)[0]);
+    }
 //    }
 
-    if(it->is_object() || (it->is_array() && (*it)[0].is_object())){
+    if (it->is_object() || (it->is_array() && (*it)[0].is_object())) {
       auto keys_temp = get_all_keys(*it);
-      for(const auto & temp : keys_temp)
+      for (const auto &temp : keys_temp)
         key_values.push_back(temp);
     }
   }
   return key_values;
 }
-
 
 ExperimentJSON::ExperimentJSON() {}
 
@@ -231,7 +224,6 @@ CountConfig::CountConfig(int argc, char **argv) {
   int total_combinations = get_prod(get_combinations(j));
   std::cout << total_combinations << std::endl;
 }
-
 
 ExperimentJSON::ExperimentJSON(int argc, char **argv) {
   using namespace nlohmann;
@@ -265,7 +257,7 @@ ExperimentJSON::ExperimentJSON(int argc, char **argv) {
        it != args_for_run.end(); ++it) {
     std::cout << it->first << " " << it->second << "\n";
   }
-  auto all_keys =  this->get_all_keys(j);
+  auto all_keys = this->get_all_keys(j);
   std::cout << "All keys \n";
   std::vector<std::string> keys, values, types;
 
@@ -284,7 +276,9 @@ ExperimentJSON::ExperimentJSON(int argc, char **argv) {
   this->database_name = "khurram_" + this->args_for_run["name"];
   this->d.create_database(this->database_name);
   this->d.make_table(this->database_name, "runs", keys, types, std::vector<std::string>{"run"});
-  keys.clear(); values.clear(); types.clear();
+  keys.clear();
+  values.clear();
+  types.clear();
 
   for (auto const &imap: this->args_for_run) {
     keys.push_back(imap.first);

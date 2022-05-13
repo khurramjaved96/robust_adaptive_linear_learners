@@ -26,34 +26,15 @@ int main(int argc, char *argv[]) {
                                std::vector<std::string>{"int", "int", "int", "real", "real", "real", "real"},
                                std::vector<std::string>{"run", "step", "seed"});
   for (int seed = 0; seed < my_experiment->get_int_param("seeds"); seed++) {
-    SupervisedLearning *env;
-    if (my_experiment->get_string_param("input_distribution") == "normal") {
-      env = new SupervisedLearningNormal(my_experiment->get_float_param("x_mean"),
-                                         FEATURES,
-                                         seed, target_noise);
-    } else if (my_experiment->get_string_param("input_distribution") == "binary") {
-      env = new SupervisedLearningBinary(my_experiment->get_float_param("p"), my_experiment->get_float_param("x_mean"),
-                                         FEATURES,
-                                         seed, target_noise);
-    } else if (my_experiment->get_string_param("input_distribution") == "normal_capped") {
-      env = new SupervisedLearningNormalCapped(my_experiment->get_float_param("x_mean"),
-                                               FEATURES,
-                                               seed, my_experiment->get_float_param("cap"), target_noise);
-    } else if (my_experiment->get_string_param("input_distribution") == "binary_variable") {
-      env = new SupervisedLearningVariableBinary(my_experiment->get_float_param("p_start"),
-                                                 my_experiment->get_float_param("p_end"),
-                                                 my_experiment->get_float_param("x_mean"),
-                                                 FEATURES,
-                                                 seed, target_noise);
+    SupervisedTracking *env;
+    env = new SupervisedTracking(my_experiment->get_float_param("input_mean"),
+                                 my_experiment->get_float_param("input_std"),
+                                 my_experiment->get_float_param("target_mean"),
+                                 my_experiment->get_float_param("target_std"),
+                                 FEATURES,
+                                 seed,
+                                 my_experiment->get_float_param("target_noise"));
 
-    } else if (my_experiment->get_string_param("input_distribution") == "uniform") {
-      env = new SupervisedLearningUniform(my_experiment->get_float_param("a"),
-                                          my_experiment->get_float_param("x_mean"),
-                                          FEATURES,
-                                          seed, target_noise);
-
-    }
-//
     float avg_target = 0;
     float last_distance = 0;
     float sum_of_squared_avg_distance = 0;
@@ -65,38 +46,50 @@ int main(int argc, char *argv[]) {
       network = new Nadaline(my_experiment->get_float_param("step_size"), FEATURES);
     else if (my_experiment->get_string_param("algorithm") == "lms")
       network = new LMS(my_experiment->get_float_param("step_size"), FEATURES);
+    else if (my_experiment->get_string_param("algorithm") == "lms_normalized_step_size")
+      network = new LMSNormalizedStepSize(my_experiment->get_float_param("step_size"), FEATURES);
+    else if (my_experiment->get_string_param("algorithm") == "lms_normalized_step_size_and_input")
+      network = new LMSNormalizedInputsAndStepSizes(my_experiment->get_float_param("step_size"), FEATURES);
     else if (my_experiment->get_string_param("algorithm") == "normalized_lms")
       network = new NormalizedLMS(my_experiment->get_float_param("step_size"), FEATURES);
+    else if (my_experiment->get_string_param("algorithm") == "adam")
+      network = new AdamLMS(my_experiment->get_float_param("step_size"),
+                            FEATURES,
+                            my_experiment->get_float_param("b1"),
+                            my_experiment->get_float_param("b2"),
+                            my_experiment->get_float_param("epsilon"));
+    else if (my_experiment->get_string_param("algorithm") == "idbd")
+      network = new IDBD(my_experiment->get_float_param("meta_step_size"), my_experiment->get_float_param("step_size"), FEATURES);
+    else if (my_experiment->get_string_param("algorithm") == "nidbd1")
+      network = new NIDBD1(my_experiment->get_float_param("meta_step_size"), my_experiment->get_float_param("step_size"), FEATURES);
+    else if (my_experiment->get_string_param("algorithm") == "nidbd2")
+      network = new NIDBD2(my_experiment->get_float_param("meta_step_size"), my_experiment->get_float_param("step_size"), FEATURES);
+    else if (my_experiment->get_string_param("algorithm") == "idbdbest")
+      network = new IDBDBest(my_experiment->get_float_param("meta_step_size"), my_experiment->get_float_param("step_size"), FEATURES);
+
     for (int step = 0; step < STEPS; step++) {
       auto x = env->step();
-//      std::cout << x[0] << std::endl;
-      variance = (1.0 / (step + 1)) * (x[0] * x[0] + (step) * variance);
-//      if(x[0] > 5){
-//        std::cout << "Extreme value\n";
-//        std::cout << x[0] << std::endl;
-//      }
       float pred = network->forward(x);
       float target = env->get_y();
+//      std::cout << "target = " << target << std::endl;
+//      std::cout << "pred = " << pred << std::endl;
       avg_target = 1.0 / (float(step) + 1.0) * (target + float(step) * avg_target);
       float mse = (target - pred) * (target - pred);
-      if (STEPS - step < 10000) {
-        int step_counter = 10000 - (STEPS - step);
+      if (STEPS - step < 20000) {
+        int step_counter = 20000 - (STEPS - step);
         last_10k_error = 1.0 / (step_counter)
             * (network->distance_to_target_weights(env->get_target_weights()) + (step_counter - 1) * last_10k_error);
       }
+//      std::cout << "last 20 k = " << last_10k_error << std::endl;
       sum_of_error += mse;
       network->zero_grad();
       network->backward(x, pred, target);
-      if (step % 50 == 0)
-        env->change_target_weights();
-      if (step > 5)
+      if(step > 3000)
         network->update_parameters();
       last_distance = network->distance_to_target_weights(env->get_target_weights());
       sum_of_squared_avg_distance += last_distance;
-//        print_vector(env->get_target_weights());
     }
 
-//    std::cout << "Avg distance = " << sum_of_squared_avg_distance / STEPS << std::endl;
     std::vector<std::string> cur_error;
     cur_error.push_back(std::to_string(my_experiment->get_int_param("run")));
     cur_error.push_back(std::to_string(STEPS));
@@ -106,12 +99,13 @@ int main(int argc, char *argv[]) {
     cur_error.push_back(std::to_string(sum_of_error / STEPS));
     cur_error.push_back(std::to_string(last_10k_error));
     error_metric.record_value(cur_error);
-//    std::cout << "Variance = " <<  my_experiment->get_string_param("input_distribution") << " " <<  variance << std::endl;
+//    LMSNormalizedInputsAndStepSizes* ptr = dynamic_cast<LMSNormalizedInputsAndStepSizes*>(network);
+//    std::cout << "Mean\n";
+//    print_vector(ptr->input_normalization_mean);
+//    std::cout << "Variance\n";
+//    print_vector(ptr->input_normalization_std);
   }
-//  std::cout << "####### ERROR IS HERE ########\n\n\n";
-//  std::cout << "Algorthm = " << my_experiment->get_string_param("input_distribution") << std::endl;
-//  std::cout << "running error = " << running_error << std::endl;
-//  std::cout << "Avg error = " << avg_running_error << std::endl;
+
   error_metric.commit_values();
 
   std::cout << "Done\n";
