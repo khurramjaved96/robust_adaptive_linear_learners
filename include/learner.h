@@ -138,6 +138,25 @@ class IDBD : public LMS {
   virtual void backward(std::vector<float> x, float pred, float target);
 };
 
+class IDBDBetaNorm : public LMS {
+ protected:
+  std::vector<float> h;
+  std::vector<float> B;
+
+  std::vector<float> step_size_gradients;
+  float h_bias;
+  float B_bias;
+  float step_size_gradient_bias;
+  float meta_step_size;
+  std::vector<float> std_delta;
+  std::vector<float> mean_delta;
+  float std_bias_delta;
+  float mean_bias_delta;
+ public:
+  IDBDBetaNorm(float meta_step_size, float step_size, int d);
+  virtual void backward(std::vector<float> x, float pred, float target);
+};
+
 class IDBDBest : public LMSNormalizedInputsAndStepSizes{
  protected:
   std::vector<float> std_delta;
@@ -152,10 +171,52 @@ class IDBDBest : public LMSNormalizedInputsAndStepSizes{
   float step_size_gradient_bias;
   float meta_step_size;
  public:
+  void print_information(std::vector<float> x, float pred, float target);
   IDBDBest(float meta_step_size, float step_size, int d);
   virtual void backward(std::vector<float> x, float pred, float target);
 
 };
+
+class IDBDNorm : public LMSNormalizedInputsAndStepSizes{
+ protected:
+  std::vector<float> std_delta;
+  std::vector<float> mean_delta;
+  float std_bias_delta;
+  float mean_bias_delta;
+  std::vector<float> h;
+  std::vector<float> B;
+  std::vector<float> step_size_gradients;
+  float h_bias;
+  float B_bias;
+  float step_size_gradient_bias;
+  float meta_step_size;
+ public:
+  void print_information(std::vector<float> x, float pred, float target);
+  IDBDNorm(float meta_step_size, float step_size, int d);
+  virtual void backward(std::vector<float> x, float pred, float target);
+
+};
+
+
+class IDBDBestYNorm : public LMSNormalizedInputsAndStepSizes{
+ protected:
+  std::vector<float> std_delta;
+  std::vector<float> mean_delta;
+  float std_bias_delta;
+  float mean_bias_delta;
+  std::vector<float> h;
+  std::vector<float> B;
+  std::vector<float> step_size_gradients;
+  float h_bias;
+  float B_bias;
+  float step_size_gradient_bias;
+  float meta_step_size;
+ public:
+  IDBDBestYNorm(float meta_step_size, float step_size, int d);
+  virtual void backward(std::vector<float> x, float pred, float target);
+
+};
+
 
 class NIDBD1 : public IDBD {
  protected:
@@ -177,69 +238,5 @@ class NIDBD2 : public IDBD {
   NIDBD2(float meta_step_size, float step_size, int d);
   void backward(std::vector<float> x, float pred, float target);
 };
-
-
-
-//
-//class LMS_Input_Normalization : public LMS{
-// protected:
-//  void update_normalization_estimates(std::vector<float> x);
-//  std::vector<float> normalize_x(std::vector<float> x);
-//  std::vector<float> input_normalization_mean;
-//  std::vector<float> input_normalization_std;
-//  std::vector<float> target_normalization_mean;
-//  std::vector<float> target_normalization_std;
-// public:
-//  LMS_Input_Normalization(float step_size, int d);
-//  float forward(std::vector<float> x);
-//  void backward(std::vector<float> x, float pred, float target);
-//  std::vector<float> get_input_mean();
-//  std::vector<float> get_input_std();
-//};
-//
-//
-//class LMS_Input_target_normalization : public LMS_Input_Normalization{
-// protected:
-//  float target_mean;
-//  float target_std;
-// public:
-//  LMS_Input_target_normalization(float step_size, int d);
-//  float forward(std::vector<float> x);
-//  void backward(std::vector<float> x, float pred, float target);
-//  void update_target_statistics(float target);
-//};
-//
-//class IDBD : public LMS_Input_target_normalization{
-// protected:
-//  std::vector<float> h;
-//  std::vector<float> B;
-//  std::vector<float> step_size_graidents;
-//  float meta_step_size;
-// public:
-//  IDBD(float meta_step_size, int d);
-//  float forward(std::vector<float> x);
-//  void backward(std::vector<float> x, float pred, float target);
-//  void update_step_size();
-//  void update_parameters();
-//};
-//
-// class IDBDNormalized : public LMS_Input_Normalization
-// {
-//  protected:
-//   std::vector<float> h;
-//   std::vector<float> B;
-//   std::vector<float> step_size_graidents;
-//   float meta_step_size;
-//   float target_mean;
-//   float target_std;
-//  public:
-//   IDBDNormalized(float meta_step_size, int d);
-//   float forward(std::vector<float> x);
-//   void backward(std::vector<float> x, float pred, float target);
-//   void update_step_size();
-//   void update_parameters();
-//   void update_target_statistics(float target);
-// };
-
 
 #endif //INCLUDE_LEARNER_H_

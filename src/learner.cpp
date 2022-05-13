@@ -283,6 +283,25 @@ IDBD::IDBD(float meta_step_size, float step_size, int d) : LMS(step_size, d) {
   this->meta_step_size = meta_step_size;
 }
 
+IDBDBetaNorm::IDBDBetaNorm(float meta_step_size, float step_size, int d) : LMS(step_size, d) {
+  for (int c = 0; c < d; c++) {
+    this->B.push_back(log(step_size));
+    this->step_size_gradients.push_back(0);
+    this->h.push_back(0);
+    this->step_sizes[c] = exp(this->B[c]);
+  }
+  h_bias = 0;
+  B_bias = log(step_size);
+  bias_step_size = exp(B_bias);
+  this->meta_step_size = meta_step_size;
+  for (int c = 0; c < dim; c++) {
+    std_delta.push_back(1);
+    mean_delta.push_back(0);
+  }
+  std_bias_delta = 1;
+  mean_bias_delta = 0;
+}
+
 IDBDBest::IDBDBest(float meta_step_size, float step_size, int d) : LMSNormalizedInputsAndStepSizes(step_size, d) {
   for (int c = 0; c < d; c++) {
     this->B.push_back(log(step_size));
@@ -329,18 +348,163 @@ void IDBDBest::backward(std::vector<float> x, float pred, float target) {
     h_bias = h_bias * temp + (bias_step_size / step_size_normalization) * norm_g;
   else
     h_bias = (bias_step_size / step_size_normalization) * norm_g;
-  float sum_of_steps = 0;
-  for (int i = 0; i < dim; i++)
-    sum_of_steps += step_sizes[i] / step_size_normalization;
-  sum_of_steps += bias_step_size / step_size_normalization;
-  float thred = 0.8;
-  if (sum_of_steps > thred) {
-    for (int i = 0; i < dim; i++) {
-      step_sizes[i] /= (sum_of_steps * (1.0 / thred));
+
+  for (int i = 0; i < dim; i++) {
+    if (step_sizes[i] > 1.0) {
+      step_sizes[i] = 0.98;
+      h[i] = 0;
     }
-    bias_step_size /= (sum_of_steps * (1.0 / thred));
+//    step_sizes[i] /= (sum_of_steps * (1.0 / thred));
   }
+  if (bias_step_size > 1.0) {
+    h_bias = 0;
+    bias_step_size = 0.98;
+  }
+//
   LMSNormalizedInputsAndStepSizes::backward(x, pred, target);
+}
+
+IDBDBestYNorm::IDBDBestYNorm(float meta_step_size, float step_size, int d) : LMSNormalizedInputsAndStepSizes(step_size,
+                                                                                                             d) {
+  for (int c = 0; c < d; c++) {
+    this->B.push_back(log(step_size));
+    this->step_size_gradients.push_back(0);
+    this->h.push_back(0);
+    this->step_sizes[c] = exp(this->B[c]);
+  }
+  for (int c = 0; c < dim; c++) {
+    std_delta.push_back(1);
+    mean_delta.push_back(0);
+  }
+  std_bias_delta = 1;
+  mean_bias_delta = 0;
+  h_bias = 0;
+  B_bias = log(step_size);
+  bias_step_size = exp(B_bias);
+  this->meta_step_size = meta_step_size;
+}
+
+void IDBDBestYNorm::backward(std::vector<float> x, float pred, float target) {
+  auto x_normalized = normalize_x(x);
+  float error = target - pred;
+  for (int c = 0; c < dim; c++) {
+    float g = error * x_normalized[c];
+    mean_delta[c] = mean_delta[c] * 0.9995 + 0.0005 * target;
+    std_delta[c] = std_delta[c] * 0.9995 + 0.0005 * (mean_delta[c] - target) * (mean_delta[c] - target);
+    float norm_g = (g) / float(sqrt(std_delta[c]) + 0.0001);
+    this->B[c] += (meta_step_size * step_size_normalization) * norm_g * h[c];
+    this->step_sizes[c] = exp(this->B[c]);
+    float temp = (1 - (step_sizes[c] / step_size_normalization) * x_normalized[c] * x_normalized[c]);
+    if (temp > 0)
+      h[c] = h[c] * temp + (step_sizes[c] / step_size_normalization) * norm_g;
+    else
+      h[c] = (step_sizes[c] / step_size_normalization) * norm_g;
+  }
+  float g = error * 1;
+  mean_bias_delta = mean_bias_delta * 0.9995 + 0.0005 * target;
+  std_bias_delta = std_bias_delta * 0.9995 + 0.0005 * (mean_bias_delta - target) * (mean_bias_delta - target);
+  float norm_g = (g) / (sqrt(std_bias_delta) + 0.0001);
+  B_bias += (meta_step_size * step_size_normalization) * norm_g * h_bias;
+  bias_step_size = exp(B_bias);
+  float temp = (1 - (bias_step_size / step_size_normalization));
+  if (temp > 0)
+    h_bias = h_bias * temp + (bias_step_size / step_size_normalization) * norm_g;
+  else
+    h_bias = (bias_step_size / step_size_normalization) * norm_g;
+
+  for (int i = 0; i < dim; i++) {
+    if (step_sizes[i] > 1.0) {
+      step_sizes[i] = 0.98;
+      h[i] = 0;
+    }
+//    step_sizes[i] /= (sum_of_steps * (1.0 / thred));
+  }
+  if (bias_step_size > 1.0) {
+    h_bias = 0;
+    bias_step_size = 0.98;
+  }
+//
+  LMSNormalizedInputsAndStepSizes::backward(x, pred, target);
+}
+
+IDBDNorm::IDBDNorm(float meta_step_size, float step_size, int d) : LMSNormalizedInputsAndStepSizes(step_size,
+                                                                                                   d) {
+  for (int c = 0; c < d; c++) {
+    this->B.push_back(log(step_size));
+    this->step_size_gradients.push_back(0);
+    this->h.push_back(0);
+    this->step_sizes[c] = exp(this->B[c]);
+  }
+  for (int c = 0; c < dim; c++) {
+    std_delta.push_back(1);
+    mean_delta.push_back(0);
+  }
+  std_bias_delta = 1;
+  mean_bias_delta = 0;
+  h_bias = 0;
+  B_bias = log(step_size);
+  bias_step_size = exp(B_bias);
+  this->meta_step_size = meta_step_size;
+}
+
+void IDBDNorm::backward(std::vector<float> x, float pred, float target) {
+  auto x_normalized = normalize_x(x);
+  float error = target - pred;
+  for (int c = 0; c < dim; c++) {
+    float g = error * x_normalized[c];
+    mean_delta[c] = mean_delta[c] * 0.9995 + 0.0005 * target;
+    std_delta[c] = std_delta[c] * 0.9995 + 0.0005 * (mean_delta[c] - target) * (mean_delta[c] - target);
+    float norm_g = g;
+    this->B[c] += (meta_step_size) * norm_g * h[c];
+    this->step_sizes[c] = exp(this->B[c]);
+    float temp = (1 - (step_sizes[c] / step_size_normalization) * x_normalized[c] * x_normalized[c]);
+    if (temp > 0)
+      h[c] = h[c] * temp + (step_sizes[c] / step_size_normalization) * norm_g;
+    else
+      h[c] = (step_sizes[c] / step_size_normalization) * norm_g;
+  }
+  float g = error * 1;
+  mean_bias_delta = mean_bias_delta * 0.9995 + 0.0005 * target;
+  std_bias_delta = std_bias_delta * 0.9995 + 0.0005 * (mean_bias_delta - target) * (mean_bias_delta - target);
+  float norm_g = g;
+  B_bias += (meta_step_size) * norm_g * h_bias;
+  bias_step_size = exp(B_bias);
+  float temp = (1 - (bias_step_size / step_size_normalization));
+  if (temp > 0)
+    h_bias = h_bias * temp + (bias_step_size / step_size_normalization) * norm_g;
+  else
+    h_bias = (bias_step_size / step_size_normalization) * norm_g;
+
+  for (int i = 0; i < dim; i++) {
+    if (step_sizes[i] > 1.0) {
+      step_sizes[i] = 0.98;
+      this->B[i] = log(step_sizes[i]);
+      h[i] = 0;
+    }
+//    step_sizes[i] /= (sum_of_steps * (1.0 / thred));
+  }
+  if (bias_step_size > 1.0) {
+    h_bias = 0;
+    bias_step_size = 0.98;
+    B_bias = log(bias_step_size);
+  }
+//
+  LMSNormalizedInputsAndStepSizes::backward(x, pred, target);
+}
+
+void IDBDBest::print_information(std::vector<float> x, float pred, float target) {
+  auto x_normalized = normalize_x(x);
+  float error = target - pred;
+  for (int c = 0; c < 1; c++) {
+    float g = error * x_normalized[c];
+    mean_delta[c] = mean_delta[c] * 0.9995 + 0.0005 * g;
+    std_delta[c] = std_delta[c] * 0.9995 + 0.0005 * (mean_delta[c] - g) * (mean_delta[c] - g);
+    float norm_g = (g) / float(sqrt(std_delta[c]) + 0.0001);
+    std::cout << "STD delta = " << float(sqrt(std_delta[c]) + 0.0001) << std::endl;
+    std::cout << "step_size_normalization = " << step_size_normalization << std::endl;
+    std::cout << "Step-size " << step_sizes[c] << std::endl;
+  }
+
 }
 
 void IDBD::backward(std::vector<float> x, float pred, float target) {
@@ -348,6 +512,33 @@ void IDBD::backward(std::vector<float> x, float pred, float target) {
   float error = target - pred;
   for (int c = 0; c < dim; c++) {
     this->B[c] += meta_step_size * error * x[c] * h[c];
+    this->step_sizes[c] = exp(this->B[c]);
+    float temp = (1 - step_sizes[c] * x[c] * x[c]);
+    if (temp > 0)
+      h[c] = h[c] * temp + step_sizes[c] * error * x[c];
+    else
+      h[c] = step_sizes[c] * error * x[c];
+  }
+
+  B_bias += meta_step_size * error * h_bias;
+  bias_step_size = exp(B_bias);
+  float temp = (1 - bias_step_size);
+  if (temp > 0)
+    h_bias = h_bias * temp + bias_step_size * error;
+  else
+    h_bias = bias_step_size * error;
+  LMS::backward(x, pred, target);
+}
+
+void IDBDBetaNorm::backward(std::vector<float> x, float pred, float target) {
+
+  float error = target - pred;
+  for (int c = 0; c < dim; c++) {
+    float g = error * x[c] * h[c];
+    mean_delta[c] = mean_delta[c] * 0.9995 + 0.0005 * g;
+    std_delta[c] = std_delta[c] * 0.9995 + 0.0005 * (mean_delta[c] - g) * (mean_delta[c] - g);
+    this->B[c] += (meta_step_size / sqrt(std_delta[c]) + 0.0001) * error * x[c] * h[c];
+
     this->step_sizes[c] = exp(this->B[c]);
     float temp = (1 - step_sizes[c] * x[c] * x[c]);
     if (temp > 0)
@@ -440,177 +631,3 @@ void NIDBD2::backward(std::vector<float> x, float pred, float target) {
   LMS::backward(x, pred, target);
 }
 
-
-//
-//LMS_Input_Normalization::LMS_Input_Normalization(float step_size, int d) : LMS(step_size, d) {
-//  for (int counter = 0; counter < d; counter++) {
-//    input_normalization_mean.push_back(0);
-//    input_normalization_std.push_back(1);
-//    target_normalization_mean.push_back(0);
-//    target_normalization_std.push_back(1);
-//  }
-//}
-//
-//float LMS_Input_Normalization::forward(std::vector<float> x) {
-//  update_normalization_estimates(x);
-//  x = normalize_x(x);
-//  return LMS::forward(x);
-//}
-//
-//std::vector<float> LMS_Input_Normalization::normalize_x(std::vector<float> x) {
-//  for (int c = 0; c < dim; c++) {
-//    x[c] = (x[c] - input_normalization_mean[c]) / input_normalization_std[c];
-//  }
-//  return x;
-//}
-//
-//void LMS_Input_Normalization::update_normalization_estimates(std::vector<float> x) {
-//  for (int c = 0; c < dim; c++) {
-//    float old_mean = input_normalization_mean[c];
-//    input_normalization_mean[c] = input_normalization_mean[c] * 0.9999 + x[c] * 0.0001;
-//    input_normalization_std[c] = input_normalization_std[c] * 0.9999
-//        + sqrt((x[c] - input_normalization_mean[c]) * (x[c] - old_mean)) * 0.0001;
-//  }
-//}
-//
-//void LMS_Input_Normalization::backward(std::vector<float> x, float pred, float target) {
-//  float error = target - pred;
-//  x = normalize_x(x);
-//  LMS::backward(x, error);
-//}
-//
-//std::vector<float> LMS_Input_Normalization::get_input_mean() {
-//  return this->input_normalization_mean;
-//}
-//
-//std::vector<float> LMS_Input_Normalization::get_input_std() {
-//  return this->input_normalization_std;
-//}
-//
-//LMS_Input_target_normalization::LMS_Input_target_normalization(float step_size, int d) : LMS_Input_Normalization(
-//    step_size,
-//    d) {
-//  target_mean = 0;
-//  target_std = 1;
-//}
-//
-//float LMS_Input_target_normalization::forward(std::vector<float> x) {
-//  float pred = LMS_Input_Normalization::forward(x);
-////  std::cout << "Target std " << target_std << std::endl;
-////  std::cout << "target mean " << target_mean << std::endl;
-//  pred = (pred * target_std) + target_mean;
-//  return pred;
-//}
-//
-//void LMS_Input_target_normalization::backward(std::vector<float> x, float pred, float target) {
-//  float target_orig = target;
-//  target = (target - target_mean) / target_std;
-////  std::cout << "Target normalized = " << target << std::endl;
-////  Update target mean and std
-//  pred = (pred - target_mean) / target_std;
-//  target_test_mean = target_test_mean*0.9999 + 0.0001*target;
-//  target_test_std = target_test_std*0.9999 + 0.0001*(target - target_test_mean)*(target - target_test_mean);
-////  std::cout << "Target " << target << std::endl;
-////  std::cout << "Target mean " << target_test_mean << " " << target_mean << std::endl;
-////  std::cout << "Target std " << target_test_std << " " << target_std << std::endl;
-//  LMS_Input_Normalization::backward(x, pred, target);
-//  update_target_statistics(target_orig);
-//}
-//
-//void LMS_Input_target_normalization::update_target_statistics(float target) {
-////  std::cout << "Target " << target << std::endl;
-//  float old_mean = target_mean;
-//  target_mean = target_mean * 0.9999 + 0.0001 * target;
-//  target_std = target_std * 0.9999 + sqrt((target - target_mean) * (target - old_mean)) * 0.0001;
-//}
-//
-//IDBD::IDBD(float meta_step_size, int d) : LMS_Input_target_normalization(1e-5, d) {
-//  for (int c = 0; c < d; c++) {
-//    this->B.push_back(log(1e-4));
-//    this->step_size_graidents.push_back(0);
-//    this->h.push_back(0);
-//    this->step_sizes[c] = exp(this->B[c]);
-//  }
-//  this->meta_step_size = meta_step_size;
-//}
-//
-//float IDBD::forward(std::vector<float> x) {
-//  return LMS_Input_target_normalization::forward(x);
-//}
-//
-//void IDBD::backward(std::vector<float> x, float pred, float target) {
-//
-//  float target_norm = (target - target_mean)/target_std;
-////  Update target mean and std
-//  float pred_norm = (pred - target_mean)/target_std;
-//  float error_norm = target_norm - pred_norm;
-//  auto x_temp = LMS_Input_Normalization::normalize_x(x);
-//  for(int c = 0; c<dim; c++){
-//    this->step_size_graidents[c] = error_norm*x_temp[c]*h[c];
-//    this->step_sizes[c] = exp(this->B[c]);
-//  }
-////  std::cout << error_norm << " " << x_temp[0] << std::endl;
-////  std::cout << meta_step_size*error_norm*x_temp[0]*h[0] << std::endl;
-////  std::cout << step_sizes[1] << std::endl;
-//  LMS_Input_target_normalization::backward(x, pred, target);
-//  for(int c = 0; c<dim; c++){
-//    h[c] = h[c]*(1-step_sizes[c]*x_temp[c]*x_temp[c]) + step_sizes[c]*error_norm*x_temp[c];
-//  }
-//}
-//
-//void IDBD::update_parameters() {
-//  for(int c = 0; c<dim; c++){
-//    this->B[c] += meta_step_size*step_size_graidents[c];
-//    this->step_sizes[c] = exp(this->B[c]);
-////    std::cout << "C " << c << " " << this->step_sizes[c] << std::endl;
-//  }
-//
-//  LMS::update_parameters();
-//}
-//
-
-//
-//
-//IDBD::IDBDNormalized(float meta_step_size, int d) : LMS_Input_target_normalization(1e-5, d) {
-//  for (int c = 0; c < d; c++) {
-//    this->B.push_back(log(1e-4));
-//    this->step_size_graidents.push_back(0);
-//    this->h.push_back(0);
-//    this->step_sizes[c] = exp(this->B[c]);
-//  }
-//  this->meta_step_size = meta_step_size;
-//}
-//
-//float IDBDNormalized::forward(std::vector<float> x) {
-//  return LMS_Input_Normalization::forward(x);
-//}
-
-//void IDBDNormalized::backward(std::vector<float> x, float pred, float target) {
-//
-//  float target_norm = (target - target_mean)/target_std;
-////  Update target mean and std
-//  float pred_norm = (pred - target_mean)/target_std;
-//  float error_norm = target_norm - pred_norm;
-//  auto x_temp = LMS_Input_Normalization::normalize_x(x);
-//  for(int c = 0; c<dim; c++){
-//    this->step_size_graidents[c] = error_norm*x_temp[c]*h[c];
-//    this->step_sizes[c] = exp(this->B[c]);
-//  }
-////  std::cout << error_norm << " " << x_temp[0] << std::endl;
-////  std::cout << meta_step_size*error_norm*x_temp[0]*h[0] << std::endl;
-////  std::cout << step_sizes[1] << std::endl;
-//  LMS_Input_target_normalization::backward(x, pred, target);
-//  for(int c = 0; c<dim; c++){
-//    h[c] = h[c]*(1-step_sizes[c]*x_temp[c]*x_temp[c]) + step_sizes[c]*error_norm*x_temp[c];
-//  }
-//}
-//
-//void IDBDNormalized::update_parameters() {
-//  for(int c = 0; c<dim; c++){
-//    this->B[c] += meta_step_size*step_size_graidents[c];
-//    this->step_sizes[c] = exp(this->B[c]);
-////    std::cout << "C " << c << " " << this->step_sizes[c] << std::endl;
-//  }
-//
-//  LMS::update_parameters();
-//}
