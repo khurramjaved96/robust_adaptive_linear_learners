@@ -11,9 +11,9 @@
 
 class NetworkFactory {
  public:
-  static Learner *get_learner(Experiment* my_experiment) {
+  static Learner *get_learner(Experiment *my_experiment) {
     Learner *network;
-    int FEATURES = my_experiment->get_int_param("features")
+    int FEATURES = my_experiment->get_int_param("features");
     if (my_experiment->get_string_param("algorithm") == "nadaline")
       network = new Nadaline(my_experiment->get_float_param("step_size"), FEATURES);
     else if (my_experiment->get_string_param("algorithm") == "lms")

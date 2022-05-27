@@ -6,20 +6,6 @@
 #define INCLUDE_LEARNER_H_
 #include <vector>
 
-
-//class TheoryLearner{
-//  std::vector<float> weights;
-//  int dim;
-//  float h_1;
-//  float b_1_tilde;
-//  float B_1_tilde;
-//  float G_0;
-//  float D_1;
-//  std::vector<float> theta_tilde;
-//  float epsilon;
-//  std::vector<std::vector<float>> weights_eta;
-//};
-
 class Learner {
  protected:
   float bias_weight;
@@ -157,7 +143,7 @@ class IDBDBetaNorm : public LMS {
   virtual void backward(std::vector<float> x, float pred, float target);
 };
 
-class IDBDBest : public LMSNormalizedInputsAndStepSizes{
+class IDBDBest : public LMSNormalizedInputsAndStepSizes {
  protected:
   std::vector<float> std_delta;
   std::vector<float> mean_delta;
@@ -177,7 +163,7 @@ class IDBDBest : public LMSNormalizedInputsAndStepSizes{
 
 };
 
-class IDBDNorm : public LMSNormalizedInputsAndStepSizes{
+class IDBDNorm : public LMSNormalizedInputsAndStepSizes {
  protected:
   std::vector<float> std_delta;
   std::vector<float> mean_delta;
@@ -194,11 +180,10 @@ class IDBDNorm : public LMSNormalizedInputsAndStepSizes{
   void print_information(std::vector<float> x, float pred, float target);
   IDBDNorm(float meta_step_size, float step_size, int d);
   virtual void backward(std::vector<float> x, float pred, float target);
-
 };
 
 
-class IDBDBestYNorm : public LMSNormalizedInputsAndStepSizes{
+class IDBDBestYNorm : public LMSNormalizedInputsAndStepSizes {
  protected:
   std::vector<float> std_delta;
   std::vector<float> mean_delta;
@@ -217,7 +202,6 @@ class IDBDBestYNorm : public LMSNormalizedInputsAndStepSizes{
 
 };
 
-
 class NIDBD1 : public IDBD {
  protected:
   float std_delta;
@@ -226,7 +210,6 @@ class NIDBD1 : public IDBD {
   NIDBD1(float meta_step_size, float step_size, int d);
   void backward(std::vector<float> x, float pred, float target);
 };
-
 
 class NIDBD2 : public IDBD {
  protected:

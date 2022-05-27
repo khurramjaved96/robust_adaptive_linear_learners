@@ -26,8 +26,6 @@ Learner::Learner(float step_size, int d) {
 float LMS::forward(std::vector<float> x) {
   this->counter++;
   float pred = 0;
-//  step_size_normalization =
-//      1.0 / (this->counter) * ((this->get_dot_product(x) + 1) + (counter - 1) * step_size_normalization);
   for (int counter = 0; counter < dim; counter++) {
     pred += weights[counter] * x[counter];
   }
