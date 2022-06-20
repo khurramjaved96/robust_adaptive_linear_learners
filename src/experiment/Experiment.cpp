@@ -273,7 +273,7 @@ ExperimentJSON::ExperimentJSON(int argc, char **argv) {
   keys.push_back("run");
   types.push_back("int");
 
-  this->database_name = "khurram_" + this->args_for_run["name"];
+  this->database_name = this->args_for_run["name"];
   this->d.create_database(this->database_name);
   this->d.make_table(this->database_name, "runs", keys, types, std::vector<std::string>{"run"});
   keys.clear();
