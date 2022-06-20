@@ -222,4 +222,16 @@ class NIDBD2 : public IDBD {
   void backward(std::vector<float> x, float pred, float target);
 };
 
+class RMSPropLMS: public LMS {
+  protected:
+    std::vector<float> v;
+    float beta;
+    float epsilon;
+    float v_bias;
+    void update_RMSProp_statistics();
+  public:
+    void update_parameters();
+    RMSPropLMS(float step_size, int d, float beta, float epsilon);
+};
+
 #endif //INCLUDE_LEARNER_H_
