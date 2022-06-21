@@ -54,7 +54,7 @@ class NetworkFactory {
       network = new IDBDNorm(my_experiment->get_float_param("meta_step_size"),
                              my_experiment->get_float_param("step_size"),
                              FEATURES);
-    else if (my_experiment->get_string_param("algorithm")="rmsprop")
+    else if (my_experiment->get_string_param("algorithm") == "rmsprop")
       network = new RMSPropLMS(my_experiment->get_float_param("step_size"),
                                FEATURES,
                                my_experiment->get_float_param("beta"),
