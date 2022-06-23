@@ -234,4 +234,20 @@ class RMSPropLMS: public LMS {
     RMSPropLMS(float step_size, int d, float beta, float epsilon);
 };
 
+class AdagradLMS: public LMS {
+  protected:
+    std::vector<float> v;
+    float v_bias;
+    float step_size_decay;
+    float epsilon;
+    void update_Adagrad_statistics();
+  public:
+    void update_parameters();
+    AdagradLMS(float step_size, int d, float step_size_decay, float epsilon);
+};
+
+class Adadelta: public LMS {
+  
+}
+
 #endif //INCLUDE_LEARNER_H_
