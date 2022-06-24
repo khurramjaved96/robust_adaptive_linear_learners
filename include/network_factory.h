@@ -55,11 +55,16 @@ class NetworkFactory {
       network = new IDBDNorm(my_experiment->get_float_param("meta_step_size"),
                              my_experiment->get_float_param("step_size"),
                              FEATURES);
-    else if (my_experiment->get_string_param("algorithm") == "idbdgradual")
-      network = new IDBDSmoothSteps(my_experiment->get_float_param("meta_step_size"),
-                             my_experiment->get_float_param("step_size"),
-                             FEATURES, 0.1);
-
+    else if (my_experiment->get_string_param("algorithm") == "rmsprop")
+      network = new RMSPropLMS(my_experiment->get_float_param("step_size"),
+                               FEATURES,
+                               my_experiment->get_float_param("beta"),
+                               my_experiment->get_float_param("epsilon"));
+    else if (my_experiment->get_string_param("algorithm") == "adagrad")
+      network = new AdagradLMS(my_experiment->get_float_param("step_size"),
+                               FEATURES,
+                               my_experiment->get_float_param("step_size_decay"),
+                               my_experiment->get_float_param("epsilon"));
     return network;
   }
 

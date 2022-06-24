@@ -207,6 +207,88 @@ std::vector<float> Learner::get_weights() {
   return weights;
 }
 
+RMSPropLMS::RMSPropLMS(float step_size, int d, float beta, float epsilon) : LMS(step_size, d) {
+    this->beta = beta;
+    this->epsilon = epsilon;
+    this->v_bias = 0;
+    for (int i = 0; i < dim; i++) {
+        this->v.push_back(0);
+    }
+}
+
+void RMSPropLMS::update_RMSProp_statistics() {
+    for (int i = 0; i < dim; i++) {
+        this->v[i] = this->v[i] * this->beta + (1 - this->beta) * this->gradients[i] * this->gradients[i];
+    }
+    this->v_bias = this->v_bias * this->beta + (1 - this->beta) * this->bias_gradient * this->bias_gradient;
+}
+
+void RMSPropLMS::update_parameters() {
+    this->update_RMSProp_statistics();
+    for (int i = 0; i < dim; i++) 
+        this->weights[i] -= this->step_sizes[i] * this->gradients[i] / (sqrt(this->v[i]) + this->epsilon);
+    
+    this->bias_weight -= this->bias_step_size * bias_gradient / (sqrt(this->v_bias) + this->epsilon);
+}
+
+void AdagradLMS::update_Adagrad_statistics() {
+  for (int i = 0; i < dim; i++) {
+        this->v[i] = this->v[i] + this->gradients[i] * this->gradients[i];
+    }
+  this->v_bias = this->v_bias + this->bias_gradient * this->bias_gradient;
+
+}
+
+void AdagradLMS::update_parameters() {
+  this->update_Adagrad_statistics();
+  float step_size_tilda = this->step_sizes[0] / (1 + (this->counter * this->step_size_decay));
+  float bias_step_size_tilda = this->bias_step_size / (1 + (this->counter  * this->step_size_decay));
+
+  for (int i = 0; i < dim; i++) {
+      this->weights[i] -= step_size_tilda * this->gradients[i] / (sqrt(this->v[i]) + this->epsilon);
+  }
+  this->bias_weight -= bias_step_size_tilda * this->bias_gradient / (sqrt(this->v_bias) + this->epsilon);
+}
+
+AdagradLMS::AdagradLMS(float step_size, int d, float step_size_decay, float epsilon) : LMS(step_size, d) {
+  this->step_size_decay = step_size_decay;
+  this->epsilon = epsilon;
+  this->v_bias = 0;
+  for (int i = 0; i < dim; i++) 
+        this->v.push_back(0);
+}
+
+// void AdadeltaLMS::update_Adadelta_statistics() {
+//   for (int i = 0; i < dim; i++) {
+//         this->v[i] = decay* this->v[i] + (1 - decay)* this->gradients[i] * this->gradients[i]; // v is a simple trace of gt^2
+//         this->delta_x[i] = (sqrt(this->u[i] + epsilon) / sqrt(this->v[i] + epsilon)) * this->gradients[i]; // delta_x is a trace of normalized gt^2 
+//         this->u[i] = decay * this->u[i] + (1 - decay) * this->delta_x[i] * this->delta_x[i]; // u is a trace of delta_x ^ 2
+//     }
+//   this->v_bias = decay * this->v_bias + (1 - decay) * this->bias_gradient * this->bias_gradient;
+//   this->delta_x_bias = (sqrt(this->u_bias + epsilon) / sqrt(this->v_bias + epsilon)) * this->bias_gradient;
+//   this->u_bias = decay * this->u_bias + (1 - decay) * this->delta_x_bias * this->delta_x_bias;
+// }
+
+// void AdadeltaLMS::update_parameters() {
+//   this->update_Adadelta_statistics();
+//   for (int i = 0; i < dim; i++) 
+//       this->weights[i] -= this->step_sizes * this->delta_x[i]; // weights are update with delta_x descent
+  
+//   this->bias_weight -= this->bias_step_size * this->delta_x_bias;
+// }
+
+// AdadeltaLMS::AdadeltaLMS(float step_size, int d, float decay, float epsilon) : LMS(step_size, d) {
+//   this->decay = decay;
+//   this->epsilon = epsilon;
+//   this->v_bias = 0;
+//   this->u_bias = 0;
+//   this->delta_x_bias = 0;
+//   for (int i = 0; i < dim; i++) 
+//       this->v.push_back(0);
+//       this->u.push_back(0);
+//       this->delta_x.push_back(0);
+// }
+
 AdamLMS::AdamLMS(float step_size, int d, float b1, float b2, float epsilon) : LMS(step_size, d) {
   this->b1 = b1;
   this->b2 = b2;
