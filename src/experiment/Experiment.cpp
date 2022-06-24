@@ -58,6 +58,30 @@ std::vector<std::string> Experiment::get_vector_param(const std::string &key) {
   return return_vec;
 }
 
+std::vector<int> Experiment::get_int_vector_param(const std::string &key) {
+  std::string val = this->get_string_param(key);
+  std::vector<int> return_vec;
+  int initial_index = 0;
+  int final_index = -1;
+  std::string temp_str;
+  for (int i = 0; i < val.size(); i++) {
+    if (val[i] == ':' || i == val.size() - 1) {
+      final_index = i;
+      if (i == val.size() - 1)
+        temp_str.append(val, initial_index, final_index + 1 - initial_index);
+      else
+        temp_str.append(val, initial_index, final_index - initial_index);
+      return_vec.push_back(std::stoi(temp_str));
+      initial_index = final_index + 1;
+      temp_str.clear();
+
+    }
+  }
+  for (int i = 0; i < return_vec.size(); i++)
+    std::cout << "Arg = " << return_vec[i] << std::endl;
+  return return_vec;
+}
+
 std::vector<int> Experiment::frequency_of_params(std::map<std::string, std::vector<std::string>> &args) {
   int total_combinations = 1;
   std::vector<int> size_of_params;

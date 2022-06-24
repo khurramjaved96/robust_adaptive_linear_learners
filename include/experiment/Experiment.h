@@ -37,6 +37,8 @@ class Experiment {
   std::string get_string_param(const std::string &);
 
   std::vector<std::string> get_vector_param(const std::string&);
+
+  std::vector<int> get_int_vector_param(const std::string&);
 };
 
 class ExperimentJSON : public Experiment {
