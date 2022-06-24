@@ -21,7 +21,10 @@ SupervisedTracking::SupervisedTracking(float input_mean,
                                                              target_noise_sampler(-target_noise, target_noise) {
 
   for (int c = 0; c < dimensions; c++) {
-    this->target_weights.push_back(1);
+    if(target_noise_sampler(mt) > 0)
+      this->target_weights.push_back(1);
+    else
+      this->target_weights.push_back(-1);
   }
   base_x = this->generate_random_x();
 }
@@ -156,6 +159,50 @@ SupervisedLearningBinary::SupervisedLearningBinary(float p,
   p_val = p;
   this->input_mean = input_mean;
   k = 1 / sqrt(p_val * (1 - p_val));
+}
+
+SupervisedTrackingFeaturewiseNonstationarity::SupervisedTrackingFeaturewiseNonstationarity(float input_mean,
+                                                                                           float input_std,
+                                                                                           float target_weights_mean,
+                                                                                           float target_weights_std,
+                                                                                           int dimensions,
+                                                                                           int seed,
+                                                                                           float target_noise,
+                                                                                           std::vector<int> prob_of_weight_flip_init)
+    : SupervisedTracking(input_mean,
+                         input_std,
+                         target_weights_mean,
+                         target_weights_std,
+                         dimensions,
+                         seed,
+                         target_noise), discrete_distribution(prob_of_weight_flip_init.begin(), prob_of_weight_flip_init.end()) {
+  this->prob_of_weight_flip = prob_of_weight_flip_init;
+
+}
+
+std::vector<float> SupervisedTrackingFeaturewiseNonstationarity::step() {
+  time++;
+//if (time % 20 == 0)
+  change_weights_based_on_probability();
+  base_x = this->generate_random_x();
+  std::vector<float> x;
+  x.reserve(base_x.size());
+  for (int counter = 0; counter < base_x.size(); counter++)
+    x.push_back(base_x[counter] * input_std + input_mean);
+  return x;
+}
+
+void SupervisedTrackingFeaturewiseNonstationarity::change_weights_based_on_probability() {
+  for(int i = 0; i < this->target_weights.size(); i++){
+    if(time % prob_of_weight_flip[i]  == 1){
+//      std::cout << prob_of_weight_flip[i] << std::endl;
+//      std::cout << "Time = " << time << std::endl;
+//      std::cout << "Changing weight index " << i << std::endl;
+      this->target_weights[i] *= -1;
+    }
+  }
+//  int index = discrete_distribution(this->mt);
+//  this->target_weights[index] *= -1;
 }
 
 std::vector<float> SupervisedLearningBinary::generate_random_x() {

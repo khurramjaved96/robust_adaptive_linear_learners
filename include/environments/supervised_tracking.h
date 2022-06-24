@@ -8,6 +8,7 @@
 #include <random>
 
 class SupervisedTracking {
+ protected:
   std::mt19937 mt;
   std::bernoulli_distribution input_sampler;
   std::uniform_real_distribution<float> target_noise_sampler;
@@ -30,10 +31,27 @@ class SupervisedTracking {
                      int dimensions,
                      int seed,
                      float target_noise);
-  std::vector<float> step();
+  virtual std::vector<float> step();
+
   float get_y();
   std::vector<float> generate_random_x();
 
+};
+
+class SupervisedTrackingFeaturewiseNonstationarity : public SupervisedTracking{
+ public:
+  std::discrete_distribution<int> discrete_distribution;
+  std::vector<int> prob_of_weight_flip;
+  void change_weights_based_on_probability();
+  std::vector<float> step();
+  SupervisedTrackingFeaturewiseNonstationarity(float input_mean,
+                                               float input_std,
+                                               float target_weights_mean,
+                                               float target_weights_std,
+                                               int dimensions,
+                                               int seed,
+                                               float target_noise,
+                                               std::vector<int> prob_of_weight_flip_init);
 };
 
 class SupervisedLearning {
