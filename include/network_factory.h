@@ -6,6 +6,7 @@
 #define INCLUDE_NETWORK_FACTORY_H_
 
 #include "learner.h"
+#include "idbd_variants.h"
 #include <string>
 #include "experiment/Experiment.h"
 
@@ -54,6 +55,11 @@ class NetworkFactory {
       network = new IDBDNorm(my_experiment->get_float_param("meta_step_size"),
                              my_experiment->get_float_param("step_size"),
                              FEATURES);
+    else if (my_experiment->get_string_param("algorithm") == "idbdgradual")
+      network = new IDBDSmoothSteps(my_experiment->get_float_param("meta_step_size"),
+                             my_experiment->get_float_param("step_size"),
+                             FEATURES, 0.1);
+
     return network;
   }
 
