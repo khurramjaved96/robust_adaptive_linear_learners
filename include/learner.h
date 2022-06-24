@@ -246,8 +246,20 @@ class AdagradLMS: public LMS {
     AdagradLMS(float step_size, int d, float step_size_decay, float epsilon);
 };
 
-class Adadelta: public LMS {
-  
-}
+class AdadeltaLMS: public LMS {
+  protected:
+    std::vector<float> v;
+    std::vector<float> u;
+    std::vector<float> delta_x;
+    float v_bias;
+    float u_bias;
+    float delta_x_bias;
+    float decay;
+    float epsilon;
+    void update_Adadelta_statistics();
+  public:
+    void update_parameters();
+    AdadeltaLMS(float step_size, int d, float decay, float epsilon);
+};
 
 #endif //INCLUDE_LEARNER_H_
