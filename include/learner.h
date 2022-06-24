@@ -113,13 +113,15 @@ class NormalizedIDBD : public LMSNormalizedInputsAndStepSizes {
 class IDBD : public LMS {
  protected:
   std::vector<float> h;
-  std::vector<float> B;
+
   std::vector<float> step_size_gradients;
   float h_bias;
   float B_bias;
   float step_size_gradient_bias;
   float meta_step_size;
  public:
+  std::vector<float> get_step_sizes();
+  std::vector<float> B;
   IDBD(float meta_step_size, float step_size, int d);
   virtual void backward(std::vector<float> x, float pred, float target);
 };

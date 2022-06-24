@@ -528,6 +528,13 @@ void IDBD::backward(std::vector<float> x, float pred, float target) {
   LMS::backward(x, pred, target);
 }
 
+std::vector<float> IDBD::get_step_sizes() {
+  std::vector<float> step_sizes;
+  for(int i = 0; i < this->B.size(); i++)
+    step_sizes.push_back(exp(this->B[i]));
+  return step_sizes;
+};
+
 void IDBDBetaNorm::backward(std::vector<float> x, float pred, float target) {
 
   float error = target - pred;
