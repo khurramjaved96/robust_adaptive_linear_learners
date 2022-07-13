@@ -14,13 +14,12 @@ int main(int argc, char *argv[]) {
 
   int T = my_experiment->get_int_param("steps");
   int no_of_features = my_experiment->get_int_param("features");
-  float noise_in_the_target = my_experiment->get_float_param("target_noise");
 
 //  Initialize database tables
   Metric error_metric = Metric(my_experiment->database_name, "error_table",
                                std::vector<std::string>{"run", "step", "seed",
-                                                        "mean_sum_of_errors", "asymptotic_error"},
-                               std::vector<std::string>{"int", "int", "int", "real", "real"},
+                                                        "mean_sum_of_errors", "asymptotic_error", "accuracy"},
+                               std::vector<std::string>{"int", "int", "int", "real", "real", "real"},
                                std::vector<std::string>{"run", "step", "seed"});
 
 //  Repeat experiment for seed number of times
@@ -39,10 +38,13 @@ int main(int argc, char *argv[]) {
             networks.push_back(NetworkFactory::get_learner(my_experiment));
       }
       // std::cout << "bbbbb" << std::endl;
+      float accuracy_estimate = 0.1;
       for (int step = 0; step < T; step++) {
             // load current image sample and its targets (0 ~ 9 prediction independently)
       //      Get next sample from the world
             auto x = env->step();
+            int max_index = -1;
+            float max_logit = -1000;
             
             for (int i = 0; i < 10; i++) {
       //      Get target/label given by the underlying target function after the agent has made the prediction
@@ -56,6 +58,10 @@ int main(int argc, char *argv[]) {
 
             //      Make a prediction
                   float pred = network->forward(x);
+                  if(pred > max_logit){
+                        max_logit = pred;
+                        max_index = i;
+                  }
                  
             //      Compute the squared error
                   float squared_error = (target - pred) * (target - pred);
@@ -75,7 +81,14 @@ int main(int argc, char *argv[]) {
             //       * (network->distance_to_target_weights(env->get_target_weights())
             //       + (step_counter - 1) * last_20k_steps_error);
             // }
-      }
+            }
+            if(max_index == env->get_y()){
+                  accuracy_estimate  = accuracy_estimate*0.9999 + 0.0001;
+            }
+            else{
+                  accuracy_estimate  = accuracy_estimate*0.9999;
+            }
+            std::cout << "accuracy:" << accuracy_estimate << std::endl;
     }
 
 //    Push results in the database
@@ -85,6 +98,7 @@ int main(int argc, char *argv[]) {
     cur_error.push_back(std::to_string(seed));
     cur_error.push_back(std::to_string(sum_of_error / T));
     cur_error.push_back(std::to_string(0));
+    cur_error.push_back(std::to_string(accuracy_estimate));
     error_metric.record_value(cur_error);
   }
 
