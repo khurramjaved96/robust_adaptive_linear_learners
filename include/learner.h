@@ -224,6 +224,19 @@ class NIDBD2 : public IDBD {
   void backward(std::vector<float> x, float pred, float target);
 };
 
+class NIDBDChampion : public IDBD {
+ protected:
+  std::vector<float> std_delta;
+  std::vector<float> mean_delta;
+  std::vector<float> std_x;
+  std::vector<float> mean_x;
+  float std_bias_delta;
+  float mean_bias_delta;
+ public:
+  NIDBDChampion(float meta_step_size, float step_size, int d);
+  void backward(std::vector<float> x, float pred, float target);
+};
+
 class RMSPropLMS: public LMS {
   protected:
     std::vector<float> v;
