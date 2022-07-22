@@ -16,8 +16,8 @@ add_executable(Robust include/json.hpp include/utils.h src/utils.cpp include/exp
         robust_linear_learner.cpp  src/environments/supervised_tracking.cpp include/environments/supervised_tracking.h include/learner.h src/learner.cpp include/idbd_variants.h src/idbd_variants.cpp)
 
 
-add_executable(CreditAssignment include/json.hpp include/utils.h src/utils.cpp include/experiment/Experiment.h include/experiment/Metric.h include/experiment/Database.h src/experiment/Metric.cpp src/experiment/Database.cpp src/experiment/Experiment.cpp
-        credit_assignment_plots.cpp  src/environments/supervised_tracking.cpp include/environments/supervised_tracking.h include/learner.h src/learner.cpp include/idbd_variants.h src/idbd_variants.cpp)
+# add_executable(CreditAssignment include/json.hpp include/utils.h src/utils.cpp include/experiment/Experiment.h include/experiment/Metric.h include/experiment/Database.h src/experiment/Metric.cpp src/experiment/Database.cpp src/experiment/Experiment.cpp
+#         credit_assignment_plots.cpp  src/environments/supervised_tracking.cpp include/environments/supervised_tracking.h include/learner.h src/learner.cpp include/idbd_variants.h src/idbd_variants.cpp)
 
 
 add_executable(Count include/json.hpp include/utils.h src/utils.cpp include/experiment/Experiment.h include/experiment/Metric.h include/experiment/Database.h src/experiment/Metric.cpp src/experiment/Database.cpp src/experiment/Experiment.cpp
@@ -35,8 +35,9 @@ add_executable(Count include/json.hpp include/utils.h src/utils.cpp include/expe
 #target_link_libraries(Nadaline PUBLIC mariadb)
 #target_link_libraries(Nadaline PUBLIC tbb)
 
-target_link_libraries(CreditAssignment PUBLIC mariadb)
-target_link_libraries(CreditAssignment PUBLIC tbb)
+# target_link_libraries(CreditAssignment PUBLIC mariadb)
+# target_link_libraries(CreditAssignment PUBLIC tbb)
+
 
 target_link_libraries(Robust PUBLIC mariadb)
 target_link_libraries(Robust PUBLIC tbb)

@@ -230,11 +230,15 @@ class NIDBDChampion : public IDBD {
   std::vector<float> mean_delta;
   std::vector<float> std_x;
   std::vector<float> mean_x;
+  std::vector<float> x_tilda;
   float std_bias_delta;
   float mean_bias_delta;
  public:
+  
   NIDBDChampion(float meta_step_size, float step_size, int d);
   void backward(std::vector<float> x, float pred, float target);
+  // virtual void update_parameters();
+  virtual float forward(std::vector<float> x);
 };
 
 class RMSPropLMS: public LMS {

@@ -728,36 +728,37 @@ NIDBDChampion::NIDBDChampion(float meta_step_size, float step_size, int d) : IDB
     mean_delta.push_back(0);
     std_x.push_back(1);
     mean_x.push_back(0);
+    x_tilda.push_back(0);
   }
   std_bias_delta = 1;
   mean_bias_delta = 0;
 }
+
 
 void NIDBDChampion::backward(std::vector<float> x, float pred, float target) {
   // do we need to 
 
   float error = target - pred;
   for (int c = 0; c < dim; c++) {
-
-    mean_x[c] = mean_x[c] * 0.9995 + 0.0005 * x[c];
-    std_x[c] = std_x[c] * 0.9995 + 0.0005 * (mean_x[c] - x[c]) * (mean_x[c] - x[c]);
-    float x_tilda = (x[c] - mean_x[c]) / (sqrt(std_x[c]) + 0.0001);
-    float meta_g = error * x_tilda * h[c];
+    // mean_x[c] = mean_x[c] * 0.9995 + 0.0005 * x[c];
+    // std_x[c] = std_x[c] * 0.9995 + 0.0005 * (mean_x[c] - x[c]) * (mean_x[c] - x[c]);
+    // x_tilda[c] = (x[c] - mean_x[c]) / (sqrt(std_x[c]) + 0.0001);
+    float meta_g = error * x_tilda[c] * h[c];
     mean_delta[c] = mean_delta[c] * 0.9995 + 0.0005 * meta_g;
     std_delta[c] = std_delta[c] * 0.9995 + 0.0005 * (mean_delta[c] - meta_g) * (mean_delta[c] - meta_g);
-    float norm_meta_g = (meta_g - mean_delta[c]) / (sqrt(std_delta[c]) + 0.0001);
+    float norm_meta_g = (meta_g) / (sqrt(std_delta[c]) + 0.0001);
     this->B[c] += meta_step_size * norm_meta_g;
     this->step_sizes[c] = exp(this->B[c]);
-    float temp = (1 - step_sizes[c] * x_tilda * x_tilda);
+    float temp = (1 - step_sizes[c] * x_tilda[c] * x_tilda[c]);
     if (temp > 0)
-      h[c] = h[c] * temp + step_sizes[c] * error * x_tilda;
+      h[c] = h[c] * temp + step_sizes[c] * error * x_tilda[c];
     else
-      h[c] = step_sizes[c] *  error * x_tilda;
+      h[c] = step_sizes[c] *  error * x_tilda[c];
   }
   float g = error * 1 * h_bias;
   mean_bias_delta = mean_bias_delta * 0.9995 + 0.0005 * g;
   std_bias_delta = std_bias_delta * 0.9995 + 0.0005 * (mean_bias_delta - g) * (mean_bias_delta - g);
-  float norm_g = (g - mean_bias_delta) / (sqrt(std_bias_delta) + 0.0001);
+  float norm_g = (g) / (sqrt(std_bias_delta) + 0.0001);
   B_bias += meta_step_size * norm_g;
   bias_step_size = exp(B_bias);
   float temp = (1 - bias_step_size);
@@ -765,5 +766,19 @@ void NIDBDChampion::backward(std::vector<float> x, float pred, float target) {
     h_bias = h_bias * temp + bias_step_size * error;
   else
     h_bias = bias_step_size * error ;
-  LMS::backward(x, pred, target);
+  
+  LMS::backward(x_tilda, pred, target);
+}
+
+float NIDBDChampion::forward(std::vector<float> x) {
+  this->counter++;
+  float pred = 0;
+  for (int c = 0; c < dim; c++) {
+    mean_x[c] = mean_x[c] * 0.9995 + 0.0005 * x[c];
+    std_x[c] = std_x[c] * 0.9995 + 0.0005 * (mean_x[c] - x[c]) * (mean_x[c] - x[c]);
+    x_tilda[c] = (x[c] - mean_x[c]) / (sqrt(std_x[c]) + 0.0001);
+    pred += weights[c] * x_tilda[c];
+  }
+  pred += bias_weight;
+  return pred;
 }
