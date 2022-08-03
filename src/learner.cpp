@@ -6,6 +6,7 @@
 #include <math.h>
 #include <iostream>
 #include <tgmath.h>
+#include <algorithm. h>
 
 LMS::LMS(float step_size, int d) : Learner(step_size, d) {
   bias_step_size = step_size;
@@ -779,6 +780,7 @@ float NIDBDChampion::forward(std::vector<float> x) {
     x_tilda[c] = (x[c] - mean_x[c]) / (sqrt(std_x[c]) + 0.0001);
     pred += weights[c] * x_tilda[c];
   }
+    std::cout << "current feature: "<< *std::max_element(x_tilda.begin(), x_tilda.end()) << std::endl;
   pred += bias_weight;
   return pred;
 }
