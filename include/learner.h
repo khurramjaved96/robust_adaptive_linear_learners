@@ -57,7 +57,7 @@ class NormalizedLMS : public LMS {
 };
 
 class LMSNormalizedInputsAndStepSizes : public LMSNormalizedStepSize {
- protected:
+  protected:
   std::vector<float> normalize_x(std::vector<float> x);
 
   void update_normalization_estimates(std::vector<float> x);
@@ -67,6 +67,12 @@ class LMSNormalizedInputsAndStepSizes : public LMSNormalizedStepSize {
   virtual float forward(std::vector<float> x);
   virtual void backward(std::vector<float> x, float pred, float target);
   LMSNormalizedInputsAndStepSizes(float step_size, int d);
+};
+
+class LMSNormalizedInputs : public LMSNormalizedInputsAndStepSizes {
+ public:
+  float forward(std::vector<float> x);
+  LMSNormalizedInputs(float step_size, int d);
 };
 
 class Nadaline : public Learner {
@@ -222,6 +228,23 @@ class NIDBD2 : public IDBD {
  public:
   NIDBD2(float meta_step_size, float step_size, int d);
   void backward(std::vector<float> x, float pred, float target);
+};
+
+class NIDBDChampion : public IDBD {
+ protected:
+  std::vector<float> std_delta;
+  std::vector<float> mean_delta;
+  std::vector<float> std_x;
+  std::vector<float> mean_x;
+  std::vector<float> x_tilda;
+  float std_bias_delta;
+  float mean_bias_delta;
+ public:
+  
+  NIDBDChampion(float meta_step_size, float step_size, int d);
+  void backward(std::vector<float> x, float pred, float target);
+  // virtual void update_parameters();
+  virtual float forward(std::vector<float> x);
 };
 
 class RMSPropLMS: public LMS {
