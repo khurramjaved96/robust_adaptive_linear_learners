@@ -57,7 +57,7 @@ class NormalizedLMS : public LMS {
 };
 
 class LMSNormalizedInputsAndStepSizes : public LMSNormalizedStepSize {
- protected:
+  protected:
   std::vector<float> normalize_x(std::vector<float> x);
 
   void update_normalization_estimates(std::vector<float> x);
@@ -67,6 +67,12 @@ class LMSNormalizedInputsAndStepSizes : public LMSNormalizedStepSize {
   virtual float forward(std::vector<float> x);
   virtual void backward(std::vector<float> x, float pred, float target);
   LMSNormalizedInputsAndStepSizes(float step_size, int d);
+};
+
+class LMSNormalizedInputs : public LMSNormalizedInputsAndStepSizes {
+ public:
+  float forward(std::vector<float> x);
+  LMSNormalizedInputs(float step_size, int d);
 };
 
 class Nadaline : public Learner {

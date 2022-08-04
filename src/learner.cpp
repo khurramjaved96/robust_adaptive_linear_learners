@@ -6,7 +6,7 @@
 #include <math.h>
 #include <iostream>
 #include <tgmath.h>
-#include <algorithm. h>
+#include <algorithm>
 
 LMS::LMS(float step_size, int d) : Learner(step_size, d) {
   bias_step_size = step_size;
@@ -43,6 +43,19 @@ float LMSNormalizedStepSize::forward(std::vector<float> x) {
 LMSNormalizedStepSize::LMSNormalizedStepSize(float step_size, int d) : LMS(step_size, d) {
   step_size_normalization = 1;
 };
+
+LMSNormalizedInputs::LMSNormalizedInputs(float step_size, int d) : LMSNormalizedInputsAndStepSizes(step_size, d) {
+  
+}
+
+float LMSNormalizedInputs::forward(std::vector<float> x) {
+  this->counter++;
+  update_normalization_estimates(x);
+  x = normalize_x(x);
+  float pred = LMS::forward(x);
+  return pred;
+}
+
 
 LMSNormalizedInputsAndStepSizes::LMSNormalizedInputsAndStepSizes(float step_size, int d) : LMSNormalizedStepSize(
     step_size,
@@ -780,7 +793,7 @@ float NIDBDChampion::forward(std::vector<float> x) {
     x_tilda[c] = (x[c] - mean_x[c]) / (sqrt(std_x[c]) + 0.0001);
     pred += weights[c] * x_tilda[c];
   }
-    std::cout << "current feature: "<< *std::max_element(x_tilda.begin(), x_tilda.end()) << std::endl;
+    // std::cout << "current feature: "<< *std::max_element(x_tilda.begin(), x_tilda.end()) << std::endl;
   pred += bias_weight;
   return pred;
 }
