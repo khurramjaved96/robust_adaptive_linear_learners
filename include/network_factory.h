@@ -65,6 +65,12 @@ class NetworkFactory {
                                FEATURES,
                                my_experiment->get_float_param("step_size_decay"),
                                my_experiment->get_float_param("epsilon"));
+    else if (my_experiment->get_string_param("algorithm") == "sigidbd")
+      network = new SigIDBD(my_experiment->get_float_param("step_size"),
+                               FEATURES,
+                               my_experiment->get_float_param("step_size_decay"),
+                               my_experiment->get_float_param("epsilon"));
+
 
     // else if (my_experiment->get_string_param("algorithm") == "idbdgradual")
     //   network = new IDBDSmoothSteps(my_experiment->get_float_param("meta_step_size"),

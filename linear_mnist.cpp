@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
             else{
                   accuracy_estimate  = accuracy_estimate*0.9999;
             }
-            std::cout << "accuracy:" << accuracy_estimate << std::endl;
+            // std::cout << "accuracy:" << accuracy_estimate << std::endl;
     }
 
 //    Push results in the database

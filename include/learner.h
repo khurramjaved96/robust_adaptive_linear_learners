@@ -264,4 +264,31 @@ class AdadeltaLMS: public LMS {
     AdadeltaLMS(float step_size, int d, float decay, float epsilon);
 };
 
+class SigIDBD : public LMS {
+ protected:
+  float h_z;
+  float h_iz;
+  std::vector<float> h;
+  float z;
+  float theta_z;
+  std::vector<float> step_size_gradients;
+  float bias_h_z;
+  float bias_h_iz;
+  float h_bias;
+  float B_bias;
+  float bias_mu;
+  float step_size_gradient_bias;
+  float meta_step_size;
+  float bias_z;
+  float mu;
+  float m;
+ public:
+  std::vector<float> get_step_sizes();
+  std::vector<float> B;
+  SigIDBD(float meta_step_size, float step_size, int d);
+  virtual void backward(std::vector<float> x, float pred, float target);
+  void update_parameters();
+};
+
+
 #endif //INCLUDE_LEARNER_H_
