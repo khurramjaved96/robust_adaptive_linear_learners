@@ -267,7 +267,7 @@ class AdadeltaLMS: public LMS {
 class SigIDBD : public LMS {
  protected:
   float h_z;
-  float h_iz;
+  std::vector<float> h_iz;
   std::vector<float> h;
   float z;
   float theta_z;
