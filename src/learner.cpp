@@ -720,7 +720,7 @@ void NIDBD2::backward(std::vector<float> x, float pred, float target) {
 
 SigIDBD::SigIDBD(float meta_step_size, float theta_z, float step_size, int d) : LMS(step_size, d) {
   z = 0; h_z = 0;  // z = 0 ???
-  bias_h_iz = 0; bias_h_z = 0; bias_z = 0;
+//  bias_h_iz = 0; bias_h_z = 0; bias_z = 0;
   for (int c = 0; c < d; c++) {
     this->B.push_back(log(step_size));
     this->h_iz.push_back(0);
@@ -728,9 +728,9 @@ SigIDBD::SigIDBD(float meta_step_size, float theta_z, float step_size, int d) : 
     this->h.push_back(0);
     this->step_sizes[c] = exp(this->B[c]);
   }
-  h_bias = 0;
-  B_bias = log(step_size);
-  bias_step_size = exp(B_bias);
+//  h_bias = 0;
+//  B_bias = log(step_size);
+//  bias_step_size = exp(B_bias);
   this->meta_step_size = meta_step_size;
   this->theta_z = theta_z;
   this->mu = 1/(1+exp(-z));
@@ -742,16 +742,16 @@ void SigIDBD::backward(std::vector<float> x, float pred, float target) {
   float error = target - pred;
   m = 0; 
   for (int c = 0; c < dim; c++) 
-    m += x[c] * x[c] * step_sizes[c]; 
-  m += bias_step_size;
+    m += x[c] * x[c] * step_sizes[c];
 
+  float temp_h = 0;
+  for(int c = 0; c < dim; c++){
+    temp_h += (x[c]*step_sizes[c]*x[c]*mu*(error*(1-mu) - h_z))/m;
+  }
+  h_z += temp_h;
+  z = z + theta_z * error * h_z;
   for (int c = 0; c < dim; c++) {
     float constant =  (step_sizes[c] * x[c] * mu) / m;
-    h_iz[c] = h_iz[c] + constant * (error * (1 - mu) - h_z);
-    for (int cc = 0; cc < dim; cc++) 
-      h_z += x[cc] * h_iz[cc];
-    h_z += bias_h_iz
-    z = z + theta_z * error * h_z;
     float c1 = mu * x[c] * error * (step_sizes[c]* m - step_sizes[c] * step_sizes[c] * x[c] * x[c]);
     h[c] = h[c] * (1 - (constant * x[c])) + (c1)/(m * m);
     this->B[c] += meta_step_size * error * x[c] * h[c];
