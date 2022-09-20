@@ -285,7 +285,7 @@ class SigIDBD : public LMS {
  public:
   std::vector<float> get_step_sizes();
   std::vector<float> B;
-  SigIDBD(float meta_step_size, float step_size, int d);
+  SigIDBD(float meta_step_size, float theta_z, float step_size, int d);
   virtual void backward(std::vector<float> x, float pred, float target);
   void update_parameters();
 };
