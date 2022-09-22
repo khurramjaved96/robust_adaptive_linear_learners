@@ -27,6 +27,11 @@ int main(int argc, char *argv[]) {
                                std::vector<std::string>{"int", "int", "int", "real", "real"},
                                std::vector<std::string>{"run", "step", "seed"});
 
+  Metric alpha_metric = Metric(my_experiment->database_name, "alpha_table", 
+                              std::vector<std::string>{"run", "step", "seed", "feature_no", "alpha", "mu"},
+                              std::vector<std::string>{"int", "int", "int", "int", "real", "real"},
+                              std::vector<std::string>{"run", "step", "seed", "feature_no"});
+
 //  Repeat experiment for seed number of times
   for (int seed = 0; seed < my_experiment->get_int_param("seeds"); seed++) {
 //    Initialize the environment
@@ -67,6 +72,30 @@ int main(int argc, char *argv[]) {
             * (network->distance_to_target_weights(env->get_target_weights())
                 + (step_counter - 1) * last_20k_steps_error);
       }
+
+      if (step % 10000 == 0) {
+            
+            std::vector<float> alphas = network->get_step_sizes();
+            for (int c = 0; c < no_of_features; c++) {
+                  std::vector<std::string> cur_alphas;
+                  cur_alphas.push_back(std::to_string(my_experiment->get_int_param("run")));
+                  cur_alphas.push_back(std::to_string(step));
+                  cur_alphas.push_back(std::to_string(seed));
+                  cur_alphas.push_back(std::to_string(c));
+                  cur_alphas.push_back(std::to_string(alphas[c]));
+                  SigIDBD* ptr = dynamic_cast<SigIDBD*>(network);
+
+                  if (ptr != nullptr){
+                        float mu = ptr->get_mu();
+                        cur_alphas.push_back(std::to_string(mu));
+                  }
+                  alpha_metric.record_value(cur_alphas);
+      	}
+
+            
+            alpha_metric.commit_values();
+      }
+
     }
 
 //    Push results in the database

@@ -25,6 +25,7 @@ class Learner {
   virtual void zero_grad();
   virtual float distance_to_target_weights(std::vector<float> target_weights);
   std::vector<float> get_weights();
+  std::vector<float> get_step_sizes();
 };
 
 class LMS : public Learner {
@@ -280,13 +281,14 @@ class SigIDBD : public LMS {
   float step_size_gradient_bias;
   float meta_step_size;
   float bias_z;
-  float mu;
   float m;
+  float mu;
  public:
   std::vector<float> get_step_sizes();
   std::vector<float> B;
   SigIDBD(float meta_step_size, float theta_z, float step_size, int d);
   virtual void backward(std::vector<float> x, float pred, float target);
+  float get_mu();
   void update_parameters();
 };
 
