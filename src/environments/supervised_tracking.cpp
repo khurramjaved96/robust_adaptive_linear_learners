@@ -19,7 +19,7 @@ SupervisedTracking::SupervisedTracking(float input_mean,
                                                              dimension(dimensions),
                                                              time(0),
                                                              target_noise_sampler(-target_noise, target_noise) {
-
+                                                              
   for (int c = 0; c < dimensions; c++) {
     if(target_noise_sampler(mt) > 0)
       this->target_weights.push_back(1);
@@ -73,6 +73,48 @@ float SupervisedTracking::get_y() {
   y += target_noise_sampler(this->mt);
   return y;
 }
+
+
+SupervisedTrackingWithDistractor::SupervisedTrackingWithDistractor(float input_mean,
+                     float input_std,
+                     float target_weights_mean,
+                     float target_weights_std,
+                     int dimensions,
+                     int seed,
+                     float target_noise,
+                     int distractors) : SupervisedTracking(input_mean,
+                         input_std,
+                         target_weights_mean,
+                         target_weights_std,
+                         dimensions,
+                         seed,
+                         target_noise){ 
+                                                             
+    this->distractors = distractors;
+    for (int c = 0; c < distractors; c++) {
+        this->target_weights.push_back(0);
+    }                                                   
+    for (int c = distractors; c < dimensions; c++) {
+      if(target_noise_sampler(mt) > 0)
+        this->target_weights.push_back(1);
+      else
+        this->target_weights.push_back(-1);
+    }
+    base_x = this->generate_random_x();
+
+}
+
+void SupervisedTrackingWithDistractor::change_target() {
+  while (true){
+    int index = weight_change_index_sampler(this->mt);
+    if (index >= distractors){
+      this->target_weights[index] *= -1;
+      break;
+    }
+  }
+}
+
+
 
 SupervisedLearning::SupervisedLearning(int dimensions,
                                        int seed, float target_noise) : mt(seed),

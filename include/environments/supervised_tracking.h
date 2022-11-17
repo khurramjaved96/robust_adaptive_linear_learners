@@ -38,6 +38,22 @@ class SupervisedTracking {
 
 };
 
+class SupervisedTrackingWithDistractor: public SupervisedTracking{
+  int distractors;
+  SupervisedTrackingWithDistractor(float input_mean,
+                     float input_std,
+                     float target_weights_mean,
+                     float target_weights_std,
+                     int dimensions,
+                     int seed,
+                     float target_noise,
+                     int distractors);
+  
+  void change_target();
+                  
+
+};
+
 class SupervisedTrackingFeaturewiseNonstationarity : public SupervisedTracking{
  public:
   std::discrete_distribution<int> discrete_distribution;

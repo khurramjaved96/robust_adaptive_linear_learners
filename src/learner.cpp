@@ -23,6 +23,10 @@ Learner::Learner(float step_size, int d) {
   dim = d;
 }
 
+std::vector<float> Learner::get_step_sizes() {
+  return this->step_sizes;
+}
+
 float LMS::forward(std::vector<float> x) {
   this->counter++;
   float pred = 0;
@@ -734,8 +738,7 @@ SigIDBD::SigIDBD(float meta_step_size, float theta_z, float step_size, int d) : 
   this->meta_step_size = meta_step_size;
   this->theta_z = theta_z;
   this->mu = 1/(1+exp(-z));
-}
-
+} 
 
 void SigIDBD::backward(std::vector<float> x, float pred, float target) {
 
@@ -776,9 +779,18 @@ void SigIDBD::update_parameters() {
     weights[c] -= ((mu * step_sizes[c]) / m) * gradients[c];
   }
   // bias_weight -= (bias_mu * bias_step_size) * bias_gradient;
-
 }
 
+std::vector<float> SigIDBD::get_step_sizes() {
+  std::vector<float> step_sizes;
+  for(int i = 0; i < this->B.size(); i++)
+    step_sizes.push_back(exp(this->B[i]) / this->m);
+  return step_sizes;
+};
+
+float SigIDBD::get_mu() {
+  return mu;
+}
 // TODO: store alpha_i / m; and mu at the end
 // compare mu with different target noises
 // compare alpha_i / m with # distractors.
