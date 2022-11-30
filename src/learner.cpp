@@ -694,7 +694,7 @@ NIDBD2::NIDBD2(float meta_step_size, float step_size, int d) : IDBD(meta_step_si
 
 void NIDBD2::backward(std::vector<float> x, float pred, float target) {
 
-  float error = target - pred;
+    float error = target - pred;
   for (int c = 0; c < dim; c++) {
     float g = error * x[c];
     mean_delta[c] = mean_delta[c] * 0.9995 + 0.0005 * g;
@@ -719,6 +719,46 @@ void NIDBD2::backward(std::vector<float> x, float pred, float target) {
     h_bias = h_bias * temp + bias_step_size * norm_g;
   else
     h_bias = bias_step_size * norm_g;
+  LMS::backward(x, pred, target);
+}
+
+NIDBD3::NIDBD3(float meta_step_size, float step_size, int d) : IDBD(meta_step_size,
+                                                                    step_size,
+                                                                    d) {
+  for (int c = 0; c < dim; c++) {
+    mean_deltaBar_delta_x.push_back(0);
+  }
+  mean_bias_mean_deltaBar_delta_x = 0;
+}
+
+void NIDBD3::backward(std::vector<float> x, float pred, float target) {
+
+  float error = target - pred;
+  for (int c = 0; c < dim; c++) {
+    float g = error * h[c]* x[c];
+    mean_deltaBar_delta_x[c] = mean_deltaBar_delta_x[c] * 0.99 + 0.01 * g * g;
+    float norm_g = g / (sqrt(mean_deltaBar_delta_x[c]) + 0.00001);
+    this->B[c] += meta_step_size * norm_g;
+    this->step_sizes[c] = exp(this->B[c]);
+
+    float temp = (1 - step_sizes[c] * x[c] * x[c]);
+    if (temp > 0)
+      h[c] = h[c] * temp + step_sizes[c] * error * x[c];
+    else
+      h[c] = step_sizes[c] * error * x[c];
+  }
+
+  float g_bias = error * 1 * h_bias;
+  mean_bias_mean_deltaBar_delta_x = mean_bias_mean_deltaBar_delta_x * 0.99 + 0.01 * g_bias * g_bias;
+  float norm_g_bias = g_bias / (sqrt(mean_bias_mean_deltaBar_delta_x) + 0.00001);
+  B_bias += meta_step_size * norm_g_bias;
+  bias_step_size = exp(B_bias);
+
+  float temp = (1 - bias_step_size);
+  if (temp > 0)
+    h_bias = h_bias * temp + bias_step_size * error;
+  else
+    h_bias = bias_step_size * error;
   LMS::backward(x, pred, target);
 }
 

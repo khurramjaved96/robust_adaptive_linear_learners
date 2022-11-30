@@ -18,9 +18,14 @@ int main(int argc, char *argv[]) {
 //  Initialize database tables
   Metric error_metric = Metric(my_experiment->database_name, "error_table",
                                std::vector<std::string>{"run", "step", "seed",
-                                                        "mean_sum_of_errors", "asymptotic_error", "accuracy"},
-                               std::vector<std::string>{"int", "int", "int", "real", "real", "real"},
+                                                        "mean_sum_of_errors", "asymptotic_error"},
+                               std::vector<std::string>{"int", "int", "int", "real", "real"},
                                std::vector<std::string>{"run", "step", "seed"});
+
+  Metric alpha_metric = Metric(my_experiment->database_name, "alpha_table", 
+                              std::vector<std::string>{"run", "step", "seed", "learner_no", "feature_no","alpha"},
+                              std::vector<std::string>{"int", "int", "int", "int", "int", "real"},
+                              std::vector<std::string>{"run", "step", "seed", "learner_no", "feature_no"});
 
 //  Repeat experiment for seed number of times
   for (int seed = 0; seed < my_experiment->get_int_param("seeds"); seed++) {
@@ -55,7 +60,6 @@ int main(int argc, char *argv[]) {
 
                   Learner *network = networks[i];
                   
-
             //      Make a prediction
                   float pred = network->forward(x);
                   if(pred > max_logit){
@@ -74,34 +78,45 @@ int main(int argc, char *argv[]) {
             //      Update the sum of errors so far
                   
                   sum_of_error += squared_error;
-      //      Update asymptotic error (Error on last 20k steps).
-            // if (T - step < 20000) {
-            // int step_counter = 20000 - (T - step);
-            // last_20k_steps_error = 1.0 / (step_counter)
-            //       * (network->distance_to_target_weights(env->get_target_weights())
-            //       + (step_counter - 1) * last_20k_steps_error);
-            // }
+
+      //      Update asymptotic error (Error on last 20k steps). TODO: Debug
+                  if (T - step < 20000) {
+                  int step_counter = 20000 - (T - step);
+                  last_20k_steps_error = 1.0 / (step_counter)
+                        * (squared_error
+                        + (step_counter - 1) * last_20k_steps_error);
+                  }
+            
+            // ====== since we are performing a linear regression task, prediction accuracy does not matter. =======
+
+            if (step % 500 == 0) {
+                  std::vector<float> alphas = network->get_step_sizes();
+                  for (int c = 0; c < no_of_features; c++) {
+                        std::vector<std::string> cur_alphas;
+                        cur_alphas.push_back(std::to_string(my_experiment->get_int_param("run")));
+                        cur_alphas.push_back(std::to_string(step));
+                        cur_alphas.push_back(std::to_string(seed));
+                        cur_alphas.push_back(std::to_string(i));
+                        cur_alphas.push_back(std::to_string(c));
+                        cur_alphas.push_back(std::to_string(alphas[c]));
+                        alpha_metric.record_value(cur_alphas);
+      	      }
+                  alpha_metric.commit_values();
             }
-            if(max_index == env->get_y()){
-                  accuracy_estimate  = accuracy_estimate*0.9999 + 0.0001;
-            }
-            else{
-                  accuracy_estimate  = accuracy_estimate*0.9999;
-            }
-            // std::cout << "accuracy:" << accuracy_estimate << std::endl;
+      }
     }
 
 //    Push results in the database
+      
     std::vector<std::string> cur_error;
     cur_error.push_back(std::to_string(my_experiment->get_int_param("run")));
     cur_error.push_back(std::to_string(T));
     cur_error.push_back(std::to_string(seed));
     cur_error.push_back(std::to_string(sum_of_error / T));
-    cur_error.push_back(std::to_string(0));
-    cur_error.push_back(std::to_string(accuracy_estimate));
+    cur_error.push_back(std::to_string(last_20k_steps_error));
     error_metric.record_value(cur_error);
+      error_metric.commit_values();
   }
 
-  error_metric.commit_values();
   std::cout << "Done\n";
 }

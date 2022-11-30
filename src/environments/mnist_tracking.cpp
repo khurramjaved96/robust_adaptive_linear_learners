@@ -16,9 +16,7 @@ MNISTTracking::MNISTTracking(int dimensions,
     for(auto inner: dataset.training_images[counter]) {
       float a = float(unsigned(inner)); // range of features: 0 - 255
       // std::cout << a << std::endl;
-      if (a < 127)
-        x_temp.push_back(-1);
-      x_temp.push_back(1);
+      x_temp.push_back(a / 255); // normalization for preprocessing
     }
     std::vector<float> y_temp;
     y_temp.push_back(float(unsigned(dataset.training_labels[counter])));
@@ -33,7 +31,7 @@ MNISTTracking::MNISTTracking(int dimensions,
     this->mappings.push_back(temp);
   }
 }
-
+ 
 void MNISTTracking::change_target() {
 
   int index1 = rand() % 10;
@@ -51,7 +49,7 @@ float MNISTTracking::map(float target) {
 std::vector<float> MNISTTracking::step() {
   time++;
   this->current_index = rand() % this->total_data_points;
-  if (time % 500 == 0)
+  if (time % 2000 == 0)
     change_target();
 
   return this->images[current_index];

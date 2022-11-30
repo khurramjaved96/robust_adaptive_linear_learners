@@ -77,9 +77,9 @@ int main(int argc, char *argv[]) {
     cur_error.push_back(std::to_string(sum_of_error / T));
     cur_error.push_back(std::to_string(last_20k_steps_error));
     error_metric.record_value(cur_error);
+
+    error_metric.commit_values();
   }
-
-  error_metric.commit_values();
-
+  
   std::cout << "Done\n";
 }

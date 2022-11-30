@@ -1,0 +1,48 @@
+{
+    "experiment": {
+      "name": "yuxin_mnist_NIDBD3_nonstationary_meta_step_size",
+      "params": {
+        "seeds": [
+          "10"
+        ],
+        "steps": [
+          "2000000"
+        ],
+        "features": [
+          "784"
+        ],
+        "algorithm": [
+          {
+            "nidbd3": {
+              "meta_step_size": [
+                "0.001015057572112833"
+              ]
+            },
+            "idbd": {
+              "meta_step_size": [
+                "0.001015057572112833"
+              ]
+            }
+          }
+        ],
+        "input_mean": [
+          "0.0"
+        ],
+        "input_std": [
+          "1.0"
+        ],
+        "target_mean": [
+          "0.0"
+        ],
+        "target_std": [
+          "1.0"
+        ],
+        "step_size": [
+          "0.001953125"
+        ],
+        "target_noise": [
+          "0.01"
+        ]
+      }
+    }
+  }
